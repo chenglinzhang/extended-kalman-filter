@@ -40,7 +40,7 @@ OUTPUT: values provided by the c++ program to the simulator
 ```
 The result looks like the following on the simulator:
 
-![alt text][image1]
+![alt text][image1 = 256x256]
 
 ---
 
