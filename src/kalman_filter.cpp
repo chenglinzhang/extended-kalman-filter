@@ -40,9 +40,9 @@ void KalmanFilter::Update(const VectorXd &z) {
 	VectorXd z_pred = H_ * x_;
 	VectorXd y = z - z_pred;
 	MatrixXd Ht = H_.transpose();
-	MatrixXd S = H_ * P_ * Ht + R_;
-	MatrixXd Si = S.inverse();
 	MatrixXd PHt = P_ * Ht;
+	MatrixXd S = H_ * PHt + R_;
+	MatrixXd Si = S.inverse();
 	MatrixXd K = PHt * Si;
 
 	//new estimate
@@ -57,25 +57,43 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
   TODO:
     * update the state by using Extended Kalman Filter equations
   */
+  float px = x_(0);
+  float py = x_(1);
+  float vx = x_(2);
+  float vy = x_(3);
 
-  float rho = sqrt(x_(0)*x_(0) + x_(1)*x_(1));
-  float phi = atan2(x_(1), x_(0));
+  float rho = sqrt(px*px + py*py);
+  float phi = atan2(py, px);
   float rho_dot;
-  if (fabs(rho) < 0.0001) {
-    rho_dot = 0;
-  } else {
-    rho_dot = (x_(0)*x_(2) + x_(1)*x_(3))/rho;
-  }
-  VectorXd z_pred(3);
-  z_pred << rho, phi, rho_dot;
-  VectorXd y = z - z_pred;
 
-  y[1] = atan2(sin(y[1]), cos(y[1]));
+	double epsilon = 0.0001;
+	if (fabs(px) < epsilon && fabs(py) < epsilon)
+	{
+    rho_dot = 0;
+    phi = 0;
+  } else {
+    rho_dot = (px*vx + py*vy)/rho;
+  }
+
+  VectorXd z_pred(3);
+  z_pred(0) = rho;
+  z_pred(1) = phi;
+  z_pred(2) = rho_dot;
+
+  VectorXd y = z - z_pred;
+  float chi = y(1);
+  while (chi > M_PI) {
+    chi -= 2.* M_PI;
+  }
+  while (chi < -M_PI) {
+    chi += 2.* M_PI;
+  }
+  y(1) = chi;
 
   MatrixXd Ht = H_.transpose();
-  MatrixXd S = H_ * P_ * Ht + R_;
-  MatrixXd Si = S.inverse();
   MatrixXd PHt = P_ * Ht;
+  MatrixXd S = H_ * PHt + R_;
+  MatrixXd Si = S.inverse();
   MatrixXd K = PHt * Si;  
 
 	//new estimate

@@ -41,23 +41,25 @@ FusionEKF::FusionEKF() {
 	H_laser_ << 1, 0, 0, 0,
 			        0, 1, 0, 0;
 
-  Hj_ << 1, 1, 0, 0,
-         1, 1, 0, 0,
-         1, 1, 1, 1;         
-         
+  //for Extended Kalman filter
+  Hj_ << 0, 0, 0, 0,
+         0, 0, 0, 0,
+         0, 0, 0, 0;   
+
 	//state covariance matrix P
 	ekf_.P_ = MatrixXd(4, 4);
-	ekf_.P_ << 1, 0, 0, 0,
-			  0, 1, 0, 0,
-			  0, 0, 1000, 0,
-			  0, 0, 0, 1000;
+	ekf_.P_ <<  1, 0, 0, 0,
+              0, 1, 0, 0,
+              0, 0, 1000, 0,
+              0, 0, 0, 1000;
 
 	//the initial transition matrix F_
 	ekf_.F_ = MatrixXd(4, 4);
-	ekf_.F_ << 1, 0, 1, 0,
-			  0, 1, 0, 1,
-			  0, 0, 1, 0,
-			  0, 0, 0, 1;
+	ekf_.F_ <<  1, 0, 1, 0,
+              0, 1, 0, 1,
+              0, 0, 1, 0,
+              0, 0, 0, 1;
+
 }
 
 /**
@@ -98,8 +100,9 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
       ekf_.x_(0) = px;
       ekf_.x_(1) = py;
-      ekf_.x_(2) = vx;
-      ekf_.x_(3) = vy;
+      // init vx,vy to 0 since phi is not the direction of speed      
+      ekf_.x_(2) = 0; //vx;
+      ekf_.x_(3) = 0; //vy;
     }
     else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
       /**
@@ -109,8 +112,13 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       float py = measurement_pack.raw_measurements_(1);
 
       ekf_.x_(0) = px;
-      ekf_.x_(0) = py;      
+      ekf_.x_(0) = py;
+      ekf_.x_(2) = 0;
+      ekf_.x_(3) = 0;            
     }
+
+    // init previous timestamp
+    previous_timestamp_ = measurement_pack.timestamp_;
 
     // done initializing, no need to predict or update
     is_initialized_ = true;
